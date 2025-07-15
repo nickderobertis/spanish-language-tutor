@@ -8,6 +8,7 @@ dependencies = [
     "livekit-agents>=0.12.18",
     "livekit-plugins-deepgram>=0.7.1",
     "livekit-plugins-elevenlabs>=0.8.1",
+    "livekit-plugins-noise-cancellation>=0.2.5",
     "livekit-plugins-openai>=0.12.0",
     "livekit-plugins-silero>=0.7.5",
 ]

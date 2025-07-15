@@ -1,6 +1,6 @@
 from livekit import agents
-from livekit.agents.voice import AgentSession, Agent
-from livekit.plugins import openai, silero
+from livekit.agents.voice import AgentSession, Agent, room_io
+from livekit.plugins import openai, silero, noise_cancellation
 from openai.types.beta.realtime.session import InputAudioTranscription
 
 from language_tutor.transcription import log_transcriptions_to_file
@@ -27,7 +27,13 @@ async def entrypoint(ctx: agents.JobContext):
 
     log_transcriptions_to_file(ctx, session)
 
-    await session.start(room=ctx.room, agent=Assistant())
+    await session.start(
+        room=ctx.room,
+        agent=Assistant(),
+        room_input_options=room_io.RoomInputOptions(
+            noise_cancellation=noise_cancellation.BVC()
+        ),
+    )
 
     await session.generate_reply(
         instructions=SYSTEM_PROMPT + "\n\n" + GREETING_PROMPT,
