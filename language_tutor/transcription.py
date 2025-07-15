@@ -3,7 +3,6 @@ import datetime
 import logging
 from livekit.agents import (
     JobContext,
-    llm,
     AgentSession,
     ConversationItemAddedEvent,
     ChatMessage,
@@ -24,9 +23,8 @@ def log_transcriptions_to_file(ctx: JobContext, session: AgentSession):
         if not isinstance(message, ChatMessage):
             return
         label = "ASSISTANT" if message.role == "assistant" else "USER"
-        log_queue.put_nowait(
-            f"[{datetime.datetime.now()}] {label}:\n{message.content}\n\n"
-        )
+        content = "\n".join(part for part in message.content if isinstance(part, str))
+        log_queue.put_nowait(f"[{datetime.datetime.now()}] {label}:\n{content}\n\n")
 
     async def write_transcription():
         async with aiofiles.open(TRANSCRIPTS_DIR / log_file_name, "w") as f:
