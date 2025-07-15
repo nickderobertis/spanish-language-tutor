@@ -1,0 +1,27 @@
+{
+  "typeCheckingMode": "strict",
+  "pythonVersion": "3.12",
+  "extraPaths": [],
+  "enableExperimentalFeatures": true,
+  // Rules config
+  "reportUnknownParameterType": "none",
+  "reportUnknownArgumentType": "none",
+  "reportUnknownMemberType": "none",
+  "reportUnknownVariableType": "none",
+  "reportUnknownLambdaType": "none",
+  "reportMissingParameterType": "none",
+  "reportMissingTypeArgument": "none",
+  // TODO: Can this be enabled only for internal packages?
+  "reportMissingTypeStubs": "none",
+  // This is already handled by ruff lint
+  "reportUnusedImport": "none",
+  // Add extra rules that are not on by default in strict mode
+  "reportImplicitStringConcatenation": "error",
+  "reportPropertyTypeMismatch": "error",
+  "reportShadowedImports": "error",
+  "reportUninitializedInstanceVariable": "error",
+  "reportUnnecessaryTypeIgnoreComment": "error",
+  "reportImplicitOverride": "error",
+  "reportMissingSuperCall": "error",
+  "reportImportCycles": "error"
+}
