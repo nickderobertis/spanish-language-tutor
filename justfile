@@ -52,3 +52,7 @@ creds:
     token=$(just create-token)
     echo "URL: ${LIVEKIT_URL}"
     echo "Token: ${token}"
+
+
+test *OPTIONS:
+    {{run}} pytest tests {{OPTIONS}}

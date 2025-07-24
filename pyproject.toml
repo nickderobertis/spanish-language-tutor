@@ -5,6 +5,11 @@ authors = [
 requires-python = "<4.0,>=3.13"
 dependencies = [
     "aiofiles>=24.1.0",
+    "beautifulsoup4>=4.13.4",
+    "brotli>=1.1.0",
+    "duckduckgo-search>=8.1.1",
+    "langchain>=0.3.26",
+    "langchain-openai>=0.3.28",
     "livekit-agents>=0.12.18",
     "livekit-plugins-deepgram>=0.7.1",
     "livekit-plugins-elevenlabs>=0.8.1",
@@ -20,4 +25,5 @@ readme = "README.md"
 [dependency-groups]
 dev = [
     "pyright",
+    "pytest>=8.4.1",
 ]

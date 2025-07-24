@@ -1,15 +1,33 @@
 from livekit import agents
 from livekit.agents.voice import AgentSession, Agent, room_io
+from livekit.agents.llm import function_tool
 from livekit.plugins import openai, silero, noise_cancellation
 from openai.types.beta.realtime.session import InputAudioTranscription
 
+
 from language_tutor.transcription import log_transcriptions_to_file
+from .web_search import web_search_to_summary
 from .constants import SYSTEM_PROMPT, GREETING_PROMPT
 
 
 class Assistant(Agent):
     def __init__(self) -> None:
         super().__init__(instructions=SYSTEM_PROMPT)
+
+    @function_tool
+    async def web_search(self, query: str) -> str:
+        """
+        Perform a web search and return the summary of the results.
+
+        Use this whenever it seems necessary to answer the user's question,
+        but always let them know that you are searching the web first
+        in your local dialect, and then immediately go to do the search without
+        waiting for the user to respond.
+        """
+        print(f"Performing web search for: {query}")
+        summary = await web_search_to_summary(query, max_results=10)
+        print(f"Web search summary: {summary}")
+        return summary
 
 
 async def entrypoint(ctx: agents.JobContext):
