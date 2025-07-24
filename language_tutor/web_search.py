@@ -1,4 +1,3 @@
-# A lot of vibe-coded nonsense in this file, but it seems to work
 import aiohttp
 from bs4 import BeautifulSoup, Tag
 import httpx
@@ -7,6 +6,7 @@ from langchain.chains.summarize import load_summarize_chain
 from langchain_openai import OpenAI
 from langchain.schema import Document
 from urllib.parse import urlparse, parse_qs, unquote
+import asyncio
 
 _url = "https://html.duckduckgo.com/html/"
 _headers = {
@@ -175,20 +175,27 @@ async def documents_from_search_results(hits: list[WebSearchResult]) -> list[Doc
     if not hits:
         return []
 
-    docs = []
+    async def fetch_single_document(
+        client: httpx.AsyncClient, result: WebSearchResult
+    ) -> Document:
+        """Fetch and extract content from a single URL."""
+        try:
+            resp = await client.get(result.url)
+            resp.raise_for_status()
+            soup = BeautifulSoup(resp.text, "lxml")
+
+            # Extract meaningful content from the page
+            text = extract_page_content(soup)
+
+        except Exception as e:
+            text = f"[Error loading {result.url}: {e}]"
+
+        return Document(page_content=text, metadata={"source": result.url})
+
+    # Fetch all documents in parallel
     async with httpx.AsyncClient(timeout=10.0) as client:
-        for res in hits:
-            try:
-                resp = await client.get(res.url)
-                resp.raise_for_status()
-                soup = BeautifulSoup(resp.text, "lxml")
-
-                # Extract meaningful content from the page
-                text = extract_page_content(soup)
-
-            except Exception as e:
-                text = f"[Error loading {res.url}: {e}]"
-            docs.append(Document(page_content=text, metadata={"source": res.url}))
+        tasks = [fetch_single_document(client, hit) for hit in hits]
+        docs = await asyncio.gather(*tasks)
 
     return docs
 
