@@ -3,7 +3,7 @@ from bs4 import BeautifulSoup, Tag
 import httpx
 from pydantic import BaseModel
 from langchain.chains.summarize import load_summarize_chain
-from langchain_openai import OpenAI
+from langchain_openai import ChatOpenAI
 from langchain.schema import Document
 from urllib.parse import urlparse, parse_qs, unquote
 import asyncio
@@ -28,7 +28,7 @@ _headers = {
     "Cache-Control": "max-age=0",
 }
 
-_llm = OpenAI(temperature=0)
+_llm = ChatOpenAI(model="gpt-4.1-nano-2025-04-14", temperature=0)
 _summary_chain = load_summarize_chain(llm=_llm, chain_type="map_reduce")
 
 

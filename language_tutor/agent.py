@@ -18,11 +18,6 @@ class Assistant(Agent):
     async def web_search(self, query: str) -> str:
         """
         Perform a web search and return the summary of the results.
-
-        Use this whenever it seems necessary to answer the user's question,
-        but always let them know that you are searching the web first
-        in your local dialect, and then immediately go to do the search without
-        waiting for the user to respond.
         """
         print(f"Performing web search for: {query}")
         summary = await web_search_to_summary(query, max_results=10)
