@@ -10,13 +10,11 @@ default:
     just check
 
 check:
-    #!/usr/bin/env bash
-    exit_code=0
+    just lint
+    just test
 
-    just show-check-versions
-    just lint || ((exit_code++))
-
-    exit $exit_code
+install-hooks:
+    git config core.hooksPath .husky
 
 
 format *FILES='.':

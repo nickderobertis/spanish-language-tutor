@@ -4,7 +4,7 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "prepare": "husky install"
+    "prepare": "just install-hooks"
   },
   "author": "",
   "license": "ISC",

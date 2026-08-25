@@ -1,6 +1,5 @@
 from typing import Final
 
-
 TOPICS: Final = (
     "introductions",
     "family",

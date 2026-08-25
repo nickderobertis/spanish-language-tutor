@@ -1,6 +1,5 @@
 from pathlib import Path
 
-
 SYSTEM_PROMPT = """
 You are a Spanish tutor in Mexico City, speaking with a local accent, slang and idioms.  
 The user is your student. Always converse in Spanish.  

@@ -1,22 +1,41 @@
-import pytest
-from language_tutor.web_search import (
-    web_search_to_summary,
-    documents_from_search_results,
-    duckduckgo_search,
-)
+from bs4 import BeautifulSoup
+
+from language_tutor.web_search import extract_page_content, extract_real_url
 
 
-@pytest.mark.anyio
-async def test_web_search_to_summary():
-    summary = await web_search_to_summary("Python programming language", max_results=3)
-    assert "Python" in summary
+def test_extract_real_url_from_search_redirect():
+    redirect = (
+        "https://duckduckgo.com/l/?uddg="
+        "https%3A%2F%2Fwww.python.org%2Fabout%2F&rut=tracking"
+    )
+
+    assert extract_real_url(redirect) == "https://www.python.org/about/"
 
 
-@pytest.mark.anyio
-async def test_web_search_documents():
-    hits = await duckduckgo_search("Python programming language", max_results=5)
-    print(f"Hits:\n{hits}\n\n")
-    assert len(hits) == 5
-    docs = await documents_from_search_results(hits)
-    print(f"Docs:\n{docs}\n\n")
-    assert len(docs) == 5
+def test_extract_real_url_rejects_ad_redirect():
+    redirect = (
+        "https://duckduckgo.com/l/?uddg="
+        "https%3A%2F%2Fduckduckgo.com%2Fy.js%3Fad_domain%3Dexample.com"
+    )
+
+    assert extract_real_url(redirect) is None
+
+
+def test_extract_page_content_prefers_main_content():
+    soup = BeautifulSoup(
+        """
+        <html><body>
+          <nav><p>This navigation sentence must not be returned.</p></nav>
+          <main>
+            <h1>Python programming language overview</h1>
+            <p>Python is a programming language designed for readable code.</p>
+          </main>
+        </body></html>
+        """,
+        "lxml",
+    )
+
+    content = extract_page_content(soup)
+
+    assert "Python is a programming language" in content
+    assert "navigation" not in content

@@ -1,12 +1,13 @@
-import aiohttp
-from bs4 import BeautifulSoup, Tag
-import httpx
-from pydantic import BaseModel
-from langchain.chains.summarize import load_summarize_chain
-from langchain_openai import ChatOpenAI
-from langchain.schema import Document
-from urllib.parse import urlparse, parse_qs, unquote
 import asyncio
+from urllib.parse import parse_qs, unquote, urlparse
+
+import aiohttp
+import httpx
+from bs4 import BeautifulSoup, Tag
+from langchain.chains.summarize import load_summarize_chain
+from langchain.schema import Document
+from langchain_openai import ChatOpenAI
+from pydantic import BaseModel
 
 _url = "https://html.duckduckgo.com/html/"
 _headers = {
@@ -28,9 +29,6 @@ _headers = {
     "Cache-Control": "max-age=0",
 }
 
-_llm = ChatOpenAI(model="gpt-4.1-nano-2025-04-14", temperature=0)
-_summary_chain = load_summarize_chain(llm=_llm, chain_type="map_reduce")
-
 
 def extract_real_url(duckduckgo_url: str) -> str | None:
     """
@@ -42,30 +40,27 @@ def extract_real_url(duckduckgo_url: str) -> str | None:
     This extracts the URL from the 'uddg' parameter and URL-decodes it.
     For ad URLs, it returns None to skip them.
     """
-    try:
-        # Parse the URL
-        parsed = urlparse(duckduckgo_url)
+    # Parse the URL
+    parsed = urlparse(duckduckgo_url)
 
-        # Get the query parameters
-        query_params = parse_qs(parsed.query)
+    # Get the query parameters
+    query_params = parse_qs(parsed.query)
 
-        # Extract the 'uddg' parameter which contains the real URL
-        if "uddg" in query_params:
-            real_url = unquote(query_params["uddg"][0])
+    # Extract the 'uddg' parameter which contains the real URL
+    if "uddg" in query_params:
+        real_url = unquote(query_params["uddg"][0])
 
-            # Skip ad URLs that go through DuckDuckGo's ad system
-            if "duckduckgo.com/y.js" in real_url or "ad_domain=" in real_url:
-                return None
+        # Skip ad URLs that go through DuckDuckGo's ad system
+        if "duckduckgo.com/y.js" in real_url or "ad_domain=" in real_url:
+            return None
 
-            # For regular (non-ad) URLs, ensure proper protocol
-            if real_url.startswith("//"):
-                real_url = "https:" + real_url
-            elif not real_url.startswith(("http://", "https://")):
-                real_url = "https://" + real_url
+        # For regular (non-ad) URLs, ensure proper protocol
+        if real_url.startswith("//"):
+            real_url = "https:" + real_url
+        elif not real_url.startswith(("http://", "https://")):
+            real_url = "https://" + real_url
 
-            return real_url
-    except Exception:
-        pass
+        return real_url
 
     # If extraction fails, ensure the original URL at least has https if it's not an ad
     if "duckduckgo.com/y.js" in duckduckgo_url or "ad_domain=" in duckduckgo_url:
@@ -88,9 +83,11 @@ class WebSearchResult(BaseModel):
 async def duckduckgo_search(query: str, max_results: int = 5) -> list[WebSearchResult]:
     params = {"q": query, "kl": "us-en"}
 
-    async with aiohttp.ClientSession() as session:
-        async with session.get(_url, params=params, headers=_headers) as resp:
-            html = await resp.text()
+    async with (
+        aiohttp.ClientSession() as session,
+        session.get(_url, params=params, headers=_headers) as resp,
+    ):
+        html = await resp.text()
 
     soup = BeautifulSoup(html, "lxml")
     results = []
@@ -187,7 +184,7 @@ async def documents_from_search_results(hits: list[WebSearchResult]) -> list[Doc
             # Extract meaningful content from the page
             text = extract_page_content(soup)
 
-        except Exception as e:
+        except httpx.HTTPError as e:
             text = f"[Error loading {result.url}: {e}]"
 
         return Document(page_content=text, metadata={"source": result.url})
@@ -278,4 +275,9 @@ async def web_search_to_summary(query: str, max_results: int = 5) -> str:
     """
     hits = await duckduckgo_search(query, max_results=max_results)
     docs = await documents_from_search_results(hits)
-    return await _summary_chain.arun(docs) if docs else "No results found."
+    if not docs:
+        return "No results found."
+
+    llm = ChatOpenAI(model="gpt-4.1-nano-2025-04-14", temperature=0)
+    summary_chain = load_summarize_chain(llm=llm, chain_type="map_reduce")
+    return await summary_chain.arun(docs)

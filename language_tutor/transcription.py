@@ -1,13 +1,15 @@
 import asyncio
 import datetime
 import logging
-from livekit.agents import (
-    JobContext,
-    AgentSession,
-    ConversationItemAddedEvent,
-    ChatMessage,
-)
+
 import aiofiles
+from livekit.agents import (
+    AgentSession,
+    ChatMessage,
+    ConversationItemAddedEvent,
+    JobContext,
+)
+
 from .constants import TRANSCRIPTS_DIR
 
 logger = logging.getLogger(__name__)
@@ -15,7 +17,8 @@ logger = logging.getLogger(__name__)
 
 def log_transcriptions_to_file(ctx: JobContext, session: AgentSession):
     log_queue = asyncio.Queue()
-    log_file_name = f"transcriptions_{datetime.datetime.now().timestamp()}.log"
+    now = datetime.datetime.now(tz=datetime.UTC)
+    log_file_name = f"transcriptions_{now.timestamp()}.log"
 
     @session.on("conversation_item_added")  # pyright: ignore[reportUntypedFunctionDecorator]
     def on_conversation_item_added(event: ConversationItemAddedEvent):  # pyright: ignore[reportUnusedFunction]
@@ -24,7 +27,8 @@ def log_transcriptions_to_file(ctx: JobContext, session: AgentSession):
             return
         label = "ASSISTANT" if message.role == "assistant" else "USER"
         content = "\n".join(part for part in message.content if isinstance(part, str))
-        log_queue.put_nowait(f"[{datetime.datetime.now()}] {label}:\n{content}\n\n")
+        timestamp = datetime.datetime.now(tz=datetime.UTC)
+        log_queue.put_nowait(f"[{timestamp}] {label}:\n{content}\n\n")
 
     async def write_transcription():
         async with aiofiles.open(TRANSCRIPTS_DIR / log_file_name, "w") as f:
