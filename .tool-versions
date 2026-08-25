@@ -1,5 +1,5 @@
 python 3.13.2
-uv 0.6.9
-nodejs 22.14.0
-pnpm 9.15.9
-just 1.40.0
+uv 0.12.6
+nodejs 26.7.0
+pnpm 11.24.0
+just 1.58.0

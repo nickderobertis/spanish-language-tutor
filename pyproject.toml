@@ -2,20 +2,24 @@
 authors = [
     {name = "Nick DeRobertis", email = "derobertis.nick@gmail.com"},
 ]
-requires-python = "<4.0,>=3.13"
+requires-python = "<3.15,>=3.13"
 dependencies = [
-    "aiofiles>=24.1.0",
-    "beautifulsoup4>=4.13.4",
-    "brotli>=1.1.0",
-    "duckduckgo-search>=8.1.1",
-    "langchain>=0.3.26",
-    "langchain-openai>=0.3.28",
-    "livekit-agents>=0.12.18",
-    "livekit-plugins-deepgram>=0.7.1",
-    "livekit-plugins-elevenlabs>=0.8.1",
-    "livekit-plugins-noise-cancellation>=0.2.5",
-    "livekit-plugins-openai>=0.12.0",
-    "livekit-plugins-silero>=0.7.5",
+    "aiofiles>=25.1.0",
+    "aiohttp>=3.14.3",
+    "beautifulsoup4>=4.15.0",
+    "brotli>=1.2.0",
+    "httpx>=0.28.1",
+    "langchain-classic>=1.0.8",
+    "langchain-openai>=1.6.0",
+    "livekit-agents>=1.7.0",
+    "livekit-plugins-deepgram>=1.7.0",
+    "livekit-plugins-elevenlabs>=1.7.0",
+    "livekit-plugins-noise-cancellation>=0.3.0",
+    "livekit-plugins-openai>=1.7.0",
+    "livekit-plugins-silero>=1.7.0",
+    "lxml>=6.1.2",
+    "openai>=2.54.0",
+    "pydantic>=2.13.4",
 ]
 name = "spanish-language-tutor"
 version = "0.1.0"
@@ -24,6 +28,7 @@ readme = "README.md"
 
 [dependency-groups]
 dev = [
-    "pyright",
-    "pytest>=8.4.1",
+    "anyio>=4.14.2",
+    "pyright>=1.1.411",
+    "pytest>=9.1.1",
 ]

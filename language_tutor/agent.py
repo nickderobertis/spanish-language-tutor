@@ -1,14 +1,27 @@
-from livekit import agents
-from livekit.agents.llm import function_tool
-from livekit.agents.voice import Agent, AgentSession, room_io
+from livekit.agents import (
+    Agent,
+    AgentServer,
+    AgentSession,
+    JobContext,
+    RoomInputOptions,
+    function_tool,
+)
 from livekit.plugins import noise_cancellation, openai, silero
-from openai.types.beta.realtime.session import InputAudioTranscription
+from openai.types.realtime import AudioTranscription
 
 from language_tutor.transcription import log_transcriptions_to_file
 
-from .constants import GREETING_PROMPT, SYSTEM_PROMPT
+from .constants import (
+    GREETING_INSTRUCTIONS,
+    REALTIME_MODEL,
+    SYSTEM_PROMPT,
+    TRANSCRIPTION_LANGUAGE,
+    TRANSCRIPTION_MODEL,
+)
 from .topics import get_random_topic
 from .web_search import web_search_to_summary
+
+MIN_SILENCE_DURATION = 3
 
 
 class Assistant(Agent):
@@ -33,33 +46,40 @@ class Assistant(Agent):
         return get_random_topic()
 
 
-async def entrypoint(ctx: agents.JobContext):
+def build_session() -> AgentSession:
+    """Build the realtime session the tutor speaks through."""
+    return AgentSession(
+        llm=openai.realtime.RealtimeModel(
+            model=REALTIME_MODEL,
+            input_audio_transcription=AudioTranscription(
+                model=TRANSCRIPTION_MODEL,
+                language=TRANSCRIPTION_LANGUAGE,
+            ),
+        ),
+        vad=silero.VAD.load(min_silence_duration=MIN_SILENCE_DURATION),
+    )
+
+
+def build_room_input_options() -> RoomInputOptions:
+    """Room input wiring, including background-voice cancellation."""
+    return RoomInputOptions(noise_cancellation=noise_cancellation.BVC())
+
+
+server = AgentServer()
+
+
+@server.rtc_session()
+async def entrypoint(ctx: JobContext) -> None:
     await ctx.connect()
 
-    session = AgentSession(
-        llm=openai.realtime.RealtimeModel(
-            input_audio_transcription=InputAudioTranscription(
-                model="gpt-4o-transcribe",
-                language="es",
-            )
-        ),
-        vad=silero.VAD.load(min_silence_duration=3),
-    )
+    session = build_session()
 
     log_transcriptions_to_file(ctx, session)
 
     await session.start(
+        Assistant(),
         room=ctx.room,
-        agent=Assistant(),
-        room_input_options=room_io.RoomInputOptions(
-            noise_cancellation=noise_cancellation.BVC()
-        ),
+        room_input_options=build_room_input_options(),
     )
 
-    await session.generate_reply(
-        instructions=SYSTEM_PROMPT + "\n\n" + GREETING_PROMPT,
-    )
-
-
-if __name__ == "__main__":
-    agents.cli.run_app(agents.WorkerOptions(entrypoint_fnc=entrypoint))
+    await session.generate_reply(instructions=GREETING_INSTRUCTIONS)

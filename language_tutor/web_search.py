@@ -3,13 +3,16 @@ from urllib.parse import parse_qs, unquote, urlparse
 
 import aiohttp
 import httpx
-from bs4 import BeautifulSoup, Tag
-from langchain.chains.summarize import load_summarize_chain
-from langchain.schema import Document
+from bs4 import BeautifulSoup
+from langchain_classic.chains.summarize import load_summarize_chain
+from langchain_core.documents import Document
+from langchain_core.language_models import BaseLanguageModel
 from langchain_openai import ChatOpenAI
 from pydantic import BaseModel
 
-_url = "https://html.duckduckgo.com/html/"
+from .constants import SUMMARY_MODEL
+
+DUCKDUCKGO_HTML_URL = "https://html.duckduckgo.com/html/"
 _headers = {
     "User-Agent": (
         "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) "
@@ -85,7 +88,7 @@ async def duckduckgo_search(query: str, max_results: int = 5) -> list[WebSearchR
 
     async with (
         aiohttp.ClientSession() as session,
-        session.get(_url, params=params, headers=_headers) as resp,
+        session.get(DUCKDUCKGO_HTML_URL, params=params, headers=_headers) as resp,
     ):
         html = await resp.text()
 
@@ -260,8 +263,8 @@ def extract_page_content(soup: BeautifulSoup) -> str:
 
     meta_desc = soup.find("meta", attrs={"name": "description"})
     desc_text = ""
-    if meta_desc and isinstance(meta_desc, Tag):
-        desc_text = meta_desc.get("content", "") or ""
+    if meta_desc is not None:
+        desc_text = str(meta_desc.get("content", "") or "")
 
     if title_text or desc_text:
         return f"{title_text}. {desc_text}".strip()
@@ -269,7 +272,23 @@ def extract_page_content(soup: BeautifulSoup) -> str:
     return "[No meaningful content found]"
 
 
-async def web_search_to_summary(query: str, max_results: int = 5) -> str:
+def build_summarization_llm() -> BaseLanguageModel:
+    """The cheap, low-latency model used to summarise fetched pages."""
+    return ChatOpenAI(model=SUMMARY_MODEL, temperature=0)
+
+
+async def summarize_documents(docs: list[Document], llm: BaseLanguageModel) -> str:
+    """Map/reduce the fetched pages down to a single spoken-length summary."""
+    summary_chain = load_summarize_chain(llm=llm, chain_type="map_reduce")
+    result = await summary_chain.ainvoke({"input_documents": docs})
+    return result[summary_chain.output_key]
+
+
+async def web_search_to_summary(
+    query: str,
+    max_results: int = 5,
+    llm: BaseLanguageModel | None = None,
+) -> str:
     """
     Perform a web search and return the summary of the results.
     """
@@ -278,6 +297,4 @@ async def web_search_to_summary(query: str, max_results: int = 5) -> str:
     if not docs:
         return "No results found."
 
-    llm = ChatOpenAI(model="gpt-4.1-nano-2025-04-14", temperature=0)
-    summary_chain = load_summarize_chain(llm=llm, chain_type="map_reduce")
-    return await summary_chain.arun(docs)
+    return await summarize_documents(docs, llm or build_summarization_llm())

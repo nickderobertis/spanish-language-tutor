@@ -124,3 +124,6 @@ dmypy.json
 .pyre/
 
 node_modules/
+
+# Session transcripts written by the tutor at runtime
+Transcripts/

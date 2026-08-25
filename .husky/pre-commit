@@ -1,7 +1,16 @@
 #!/bin/bash
 set -e
 
+# Formatting is a convenience for a working checkout, not the merge-path verifier —
+# that is the pre-push hook, which runs the complete gate. A clone made to publish
+# from, or any fresh clone before `pnpm install`, has no node_modules and therefore
+# no prettier, so running lint-staged there fails a commit that nothing could have
+# formatted anyway. Skip rather than refuse.
+if [ ! -d node_modules ]; then
+  exit 0
+fi
+
 # Workaround to get lint-staged to work outside of main shell
 # (e.g. Git GUIs)
-ASDF_SHIMS_PATH=$(realpath ~/.asdf/shims)
-PATH="$ASDF_SHIMS_PATH:$PATH" npx lint-staged
+ASDF_SHIMS_PATH=$(realpath ~/.asdf/shims 2>/dev/null || true)
+PATH="${ASDF_SHIMS_PATH:+$ASDF_SHIMS_PATH:}$PATH" npx --no-install lint-staged

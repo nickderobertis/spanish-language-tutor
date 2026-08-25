@@ -22,8 +22,9 @@ format *FILES='.':
     {{run-lint}} ruff check --fix {{FILES}}
     {{run-lint}} ruff format {{FILES}}
 
+# Read-only quality tier: reports findings, never rewrites the working tree.
 lint *FILES='.':
-    {{run-lint}} ruff check --fix {{FILES}}
+    {{run-lint}} ruff check {{FILES}}
     {{run-lint}} ruff format --check {{FILES}}
     {{run}} pyright {{FILES}}
 
@@ -32,10 +33,10 @@ unsafe-fix:
     {{run-lint}} ruff format .
 
 start:
-    LOG_LEVEL=info {{run}} python -m language_tutor.agent dev --log-level info --watch
+    LOG_LEVEL=info {{run}} python -m livekit.agents start language_tutor/agent.py --dev --log-level INFO
 
 debug:
-    LOG_LEVEL=debug {{run}} python -m language_tutor.agent dev --log-level debug --watch
+    LOG_LEVEL=debug {{run}} python -m livekit.agents start language_tutor/agent.py --dev --log-level DEBUG
 
 sync:
     uv sync --group dev --frozen

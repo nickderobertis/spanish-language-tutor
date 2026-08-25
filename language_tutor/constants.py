@@ -37,3 +37,21 @@ Now say a greeting in your local dialect.
 """.strip()
 
 TRANSCRIPTS_DIR = Path(__file__).parent.parent / "Transcripts"
+
+GREETING_INSTRUCTIONS = SYSTEM_PROMPT + "\n\n" + GREETING_PROMPT
+
+# OpenAI's current default realtime model. Chosen explicitly rather than relying
+# on the LiveKit plugin default so conversation quality cannot change under us
+# when the plugin bumps its own default.
+REALTIME_MODEL = "gpt-realtime-2.1"
+
+# Input-audio transcription for the realtime session. Still a first-party
+# supported transcription model, and the one that feeds the Spanish transcript
+# log, so it is pinned separately from REALTIME_MODEL.
+TRANSCRIPTION_MODEL = "gpt-4o-transcribe"
+TRANSCRIPTION_LANGUAGE = "es"
+
+# Cheap, non-reasoning chat model used only to summarise fetched web pages
+# mid-conversation. Latency matters more than depth here, so this stays on the
+# nano tier rather than following REALTIME_MODEL.
+SUMMARY_MODEL = "gpt-4.1-nano-2025-04-14"
